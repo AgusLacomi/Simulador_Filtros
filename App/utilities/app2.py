@@ -9,18 +9,18 @@ st.title("3 Botones con Imágenes Alternables")
 
 # Rutas de las imágenes (ajusta estas rutas según tus archivos)
 image_paths = {
-    'button1_a': 'images\RC1.jpg',
-    'button1_b': 'images\RL1.jpg',
-    'button2_a': 'images\RC2.jpg', 
-    'button2_b': 'images\RL2.jpg',
-    'button3_a': 'images\RLC1.jpg',
-    'button3_b': 'images\RLC2.jpg'
+    'button1_a': '..\images\RC1.jpg',
+    'button1_b': '..\images\RL1.jpg',
+    'button2_a': '..\images\RC2.jpg', 
+    'button2_b': '..\images\RL2.jpg',
+    'button3_a': '..\images\RLC1.jpg',
+    'button3_b': '..\images\RLC2.jpg'
 }
-
 
 # Función para alternar el estado de un botón
 def toggle_image(button_index):
     st.session_state.button_states[button_index] = 1 - st.session_state.button_states[button_index]
+
 # Crear los 3 botones con imágenes alternables
 for i in range(3):
     st.subheader(f"Botón {i+1}")
