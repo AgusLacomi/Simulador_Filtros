@@ -1,3 +1,6 @@
+#TODO UN GRAFICO DE Amplitud EN FUNCION DE FRECUENCIA
+#TODO UN GRAFICO DE ESPECTRO DE FRECUENCIAS
+
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,10 +24,10 @@ st.markdown("### Explora el comportamiento del filtro pasa-bajo")
 st.sidebar.header("Parámetros de la Señal")
 
 # Parámetros de la señal de entrada
-freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz)", min_value=1.0, max_value=100.0, step=0.1)
-freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz)", min_value=1.0, max_value=200.0, step=0.1)
-amplitude_signal = st.sidebar.number_input("Amplitud de la señal", min_value=0.1, max_value=12.0)
-amplitude_noise = st.sidebar.number_input("Amplitud del ruido", min_value=0.0, max_value=1.0, step=0.1)
+freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz) 1 a 100", min_value=1.0, max_value=100.0, step=0.1)
+freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz) 1 a 100", min_value=1.0, max_value=100.0, step=0.1)
+amplitude_signal = st.sidebar.number_input("Amplitud de la señal 0,1 a 12", min_value=0.1, max_value=12.0)
+amplitude_noise = st.sidebar.number_input("Amplitud del ruido 0,01 a 1", min_value=0.01, max_value=1.0, step=0.1)
 
 #freq_signal = st.sidebar.slider("Frecuencia de la señal principal (Hz)", 1, 1000, 10)
 #freq_noise = st.sidebar.slider("Frecuencia del ruido (Hz)", 1, 200, 50)
@@ -59,7 +62,7 @@ if filter_type == "Pasa-Bajo":
 
     # Mostrar contenido según modo
     if st.session_state.modo == MODO_FC:
-        """st.sidebar.success("Este es el contenido de la sidebar (Modo A)")"""
+        # st.sidebar.success("Este es el contenido de la sidebar (Modo A)")
         cutoff = st.sidebar.number_input("Frecuencia de corte (Hz)", min_value=1.0, max_value=100.0, step=0.1)
         #cutoff = st.sidebar.slider("Frecuencia de corte (Hz)", 0.1, 100.0, 10.0)
     else:
@@ -144,6 +147,10 @@ ax2.set_ylabel('Fase (grados)')
 ax2.grid(True, alpha=0.3)
 ax2.set_xlim(0, 500)
 
+# Marcar frecuencias de corte
+if filter_type == "Pasa-Bajo":
+    ax2.axvline(cutoff, color='red', linestyle='--', alpha=0.7, label=f'Fc = {cutoff} Hz')
+
 plt.tight_layout()
 st.pyplot(fig)
 
@@ -158,7 +165,7 @@ with col1:
 
 with col2:
     if filter_type in ["Pasa-Bajo", "Pasa-Alto"]:
-        st.metric("Frecuencia de Corte", f"{cutoff} Hz")
+        st.metric("Frecuencia de Corte", f"{cutoff:.2f} Hz")
     
     st.metric("Frecuencia de Muestreo", f"{fs} Hz")
 
@@ -166,7 +173,7 @@ with col3:
     # Calcular atenuación en la frecuencia del ruido
     noise_freq_idx = np.argmin(np.abs(freq_response - freq_noise))
     attenuation = 20 * np.log10(abs(h[noise_freq_idx]))
-    st.metric("Atenuación del Ruido", f"{attenuation:.1f} dB")
+    st.metric("Atenuación del Ruido", f"{attenuation:.2f} dB")
     
     # SNR mejorado
     snr_input = 20 * np.log10(amplitude_signal / amplitude_noise)
@@ -174,7 +181,7 @@ with col3:
     noise_power_filtered = np.var(signal_filtered - signal_clean)
     if noise_power_filtered > 0:
         snr_output = 10 * np.log10(signal_power_filtered / noise_power_filtered)
-        st.metric("Mejora SNR", f"{snr_output - snr_input:.1f} dB")
+        st.metric("Mejora SNR", f"{snr_output - snr_input:.2f} dB")
     else:
         st.metric("Mejora SNR", "∞ dB")
 
