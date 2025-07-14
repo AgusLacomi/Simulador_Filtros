@@ -223,7 +223,7 @@ with col2:
 
 with col3:
     # Calcular atenuación en la frecuencia del ruido (en voltaje)
-    noise_freq_idx = np.argmin(np.abs(freq_response - freq_noise))
+    noise_freq_idx = np.argmin(np.abs(freq_signal - freq_noise))
     attenuation_voltage = abs(h[noise_freq_idx])
     st.metric("Atenuación del Ruido", f"{attenuation_voltage:.2f} V")
     
