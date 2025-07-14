@@ -26,6 +26,15 @@ st.title("🔧 Simulador de Filtros de Señales")
 st.markdown("### Explora el comportamiento del filtro pasa-bajo")
 
 # Sidebar para controles
+
+# Tipo de señal de entrada
+st.sidebar.header("Forma de la Señal")
+waveform_type = st.sidebar.selectbox(
+    "Tipo de señal",
+    ["Sinusoidal", "Cuadrada", "Diente de sierra"]
+)
+
+
 st.sidebar.header("Parámetros de la Señal")
 
 # Parámetros de la señal de entrada
@@ -47,10 +56,16 @@ filter_type = "Pasa-Bajo"  # Filtro fijo para este ejemplo
 fs = 1000  # Hz
 t = np.linspace(0, 2, fs * 2, endpoint=False)
 
-# Generar señal de entrada
-signal_clean = amplitude_signal * np.sin(2 * np.pi * freq_signal * t)
+# Generar señal base según tipo seleccionado
+if waveform_type == "Sinusoidal":
+    signal_clean = amplitude_signal * np.sin(2 * np.pi * freq_signal * t)
+elif waveform_type == "Cuadrada":
+    signal_clean = amplitude_signal * signal.square(2 * np.pi * freq_signal * t)
+elif waveform_type == "Diente de sierra":
+    signal_clean = amplitude_signal * signal.sawtooth(2 * np.pi * freq_signal * t)
 noise = amplitude_noise * np.sin(2 * np.pi * freq_noise * t)
 signal_input = signal_clean + noise
+
 
 # Función para alternar entre modos
 def alternar_modo():
@@ -87,8 +102,6 @@ if filter_type == "Pasa-Bajo":
 st.sidebar.header("Estimaciones Útiles")
 cutoff_estimated = np.sqrt(freq_signal * freq_noise)
 st.sidebar.write("Frecuencia de corte estimada: ", f"{cutoff_estimated:.2f} Hz")
-component_estimated = 1 / (2 * np.pi * cutoff_estimated)
-st.sidebar.write("Componentes estimados para R y C: ", f"{component_estimated:.2f} s")
 
 # Aplicar filtro
 signal_filtered = signal.filtfilt(b, a, signal_input)
@@ -173,13 +186,28 @@ with col2:
     plt.tight_layout()
     st.pyplot(fig)
 
-# Respuesta en frecuencia del filtro
-st.subheader("🎯 Respuesta en Frecuencia del Filtro")
+st.subheader("🎚️ Ganancia en Voltaje vs Frecuencia")
 
-# Calcular respuesta en frecuencia
-w, h = signal.freqz(b, a, worN=8000)
-freq_response = w * fs / (2 * np.pi)
+# Calcular respuesta en frecuencia del filtro
+w, h = signal.freqz(b, a, worN=8000, fs=fs)
+gain_voltage = np.abs(h)
 
+# Crear figura
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(w, gain_voltage, label="Ganancia (V/V)", color='blue')
+ax.set_title("Respuesta en Frecuencia (Voltaje)")
+ax.set_xlabel("Frecuencia (Hz)")
+ax.set_ylabel("Ganancia (V/V)")
+ax.grid(True, alpha=0.3)
+
+# Dibujar línea de corte según tipo de filtro
+if filter_type == "Pasa-Bajo" or filter_type == "Pasa-Alto":
+    ax.axvline(cutoff, color='red', linestyle='--', label=f"Frecuencia de corte: {cutoff} Hz")
+
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 1.1)
+ax.legend()
+st.pyplot(fig)
 
 # Información adicional
 st.subheader("📋 Información del Filtro")

@@ -15,6 +15,15 @@ st.title("🔧 Simulador de Filtros de Señales")
 st.markdown("### Explora el comportamiento de filtros pasa-alto, pasa-bajo y pasa-banda")
 
 # Sidebar para controles
+
+# Tipo de señal de entrada
+st.sidebar.header("Forma de la Señal")
+waveform_type = st.sidebar.selectbox(
+    "Tipo de señal",
+    ["Sinusoidal", "Cuadrada", "Diente de sierra"]
+)
+
+
 st.sidebar.header("Parámetros de la Señal")
 
 # Parámetros de la señal de entrada
@@ -34,8 +43,13 @@ filter_type = st.sidebar.selectbox(
 fs = 1000  # Hz
 t = np.linspace(0, 2, fs * 2, endpoint=False)
 
-# Generar señal de entrada
-signal_clean = amplitude_signal * np.sin(2 * np.pi * freq_signal * t)
+# Generar señal base según tipo seleccionado
+if waveform_type == "Sinusoidal":
+    signal_clean = amplitude_signal * np.sin(2 * np.pi * freq_signal * t)
+elif waveform_type == "Cuadrada":
+    signal_clean = amplitude_signal * signal.square(2 * np.pi * freq_signal * t)
+elif waveform_type == "Diente de sierra":
+    signal_clean = amplitude_signal * signal.sawtooth(2 * np.pi * freq_signal * t)
 noise = amplitude_noise * np.sin(2 * np.pi * freq_noise * t)
 signal_input = signal_clean + noise
 
@@ -153,78 +167,7 @@ with col2:
     plt.tight_layout()
     st.pyplot(fig)
 
-# Respuesta en frecuencia del filtro
-st.subheader("🎯 Respuesta en Frecuencia del Filtro")
 
-# Calcular respuesta en frecuencia
-w, h = signal.freqz(b, a, worN=8000)
-freq_response = w * fs / (2 * np.pi)
-
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 6))
-
-# Magnitud
-ax1.plot(freq_response, 20 * np.log10(abs(h)), 'g-', linewidth=2)
-ax1.set_title(f'Respuesta en Magnitud - Filtro {filter_type}')
-ax1.set_xlabel('Frecuencia (Hz)')
-ax1.set_ylabel('Magnitud (dB)')
-ax1.grid(True, alpha=0.3)
-ax1.set_xlim(0, 100)
-
-# Marcar frecuencias de corte
-if filter_type == "Pasa-Bajo":
-    ax1.axvline(cutoff, color='red', linestyle='--', alpha=0.7, label=f'Fc = {cutoff} Hz')
-elif filter_type == "Pasa-Alto":
-    ax1.axvline(cutoff, color='red', linestyle='--', alpha=0.7, label=f'Fc = {cutoff} Hz')
-else:
-    ax1.axvline(low_freq, color='red', linestyle='--', alpha=0.7, label=f'F1 = {low_freq} Hz')
-    ax1.axvline(high_freq, color='red', linestyle='--', alpha=0.7, label=f'F2 = {high_freq} Hz')
-
-ax1.legend()
-
-# Fase
-phase = np.unwrap(np.angle(h))
-ax2.plot(freq_response, np.degrees(phase), 'purple', linewidth=2)
-ax2.set_title('Respuesta en Fase')
-ax2.set_xlabel('Frecuencia (Hz)')
-ax2.set_ylabel('Fase (grados)')
-ax2.grid(True, alpha=0.3)
-ax2.set_xlim(0, 100)
-
-plt.tight_layout()
-st.pyplot(fig)
-
-# Información adicional
-st.subheader("📋 Información del Filtro")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("Tipo de Filtro", filter_type)
-    st.metric("Orden del Filtro", order)
-
-with col2:
-    if filter_type in ["Pasa-Bajo", "Pasa-Alto"]:
-        st.metric("Frecuencia de Corte", f"{cutoff} Hz")
-    else:
-        st.metric("Banda de Paso", f"{low_freq}-{high_freq} Hz")
-    
-    st.metric("Frecuencia de Muestreo", f"{fs} Hz")
-
-with col3:
-    # Calcular atenuación en la frecuencia del ruido
-    noise_freq_idx = np.argmin(np.abs(freq_response - freq_noise))
-    attenuation = 20 * np.log10(abs(h[noise_freq_idx]))
-    st.metric("Atenuación del Ruido", f"{attenuation:.1f} dB")
-    
-    # SNR mejorado
-    snr_input = 20 * np.log10(amplitude_signal / amplitude_noise)
-    signal_power_filtered = np.var(signal_filtered)
-    noise_power_filtered = np.var(signal_filtered - signal_clean)
-    if noise_power_filtered > 0:
-        snr_output = 10 * np.log10(signal_power_filtered / noise_power_filtered)
-        st.metric("Mejora SNR", f"{snr_output - snr_input:.1f} dB")
-    else:
-        st.metric("Mejora SNR", "∞ dB")
 
 # Explicación del filtro
 st.subheader("💡 Explicación")

@@ -73,8 +73,8 @@ if filter_type == "Pasa-Bajo":
         #valor = st.number_input("Ingresa un valor numérico (Modo B)", min_value=0, max_value=100)
         #st.write("Valor ingresado:", valor)
         resist = st.sidebar.number_input("valor R1 - Resistencia (Ω)", min_value = 1.0, max_value = 10.0, step=0.1)
-        capacitance = st.sidebar.number_input("valor C1 - Capacitancia (ϝ)", min_value = 1.0, max_value = 10.0, step=0.1)
-        cutoff =  1 / (2 * np.pi * resist * capacitance)  # Frecuencia de corte calculada
+        inductance = st.sidebar.number_input("valor L1 - Inductancia (H)", min_value = 1.0, max_value = 10.0, step=0.1)
+        cutoff =  resist / (2 * np.pi * inductance)  # Frecuencia de corte calculada
     
     order = 1 # Orden del filtro fijo
 
@@ -84,44 +84,97 @@ if filter_type == "Pasa-Bajo":
     normal_cutoff = cutoff / nyquist
     b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
 
+
 #Informacion proporcionada al usuario
-st.sidebar.header("Estimación util")
+st.sidebar.header("Estimaciones Útiles")
+cutoff_estimated = np.sqrt(freq_signal * freq_noise)
+st.sidebar.write("Frecuencia de corte estimada: ", f"{cutoff_estimated:.2f} Hz")
+component_estimated = 1 / (2 * np.pi * cutoff_estimated)
+st.sidebar.write("Componentes estimados para R y L (L/R): ", f"{component_estimated:.2f} s")
 
 
 # Aplicar filtro
 signal_filtered = signal.filtfilt(b, a, signal_input)
 
-st.subheader("📈 Señales en el Tiempo")
+# Layout en columnas
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader("📈 Señales en el Tiempo")
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
 
-# Señal original
-ax1.plot(t[:500], signal_input[:500], 'b-', linewidth=1, label='Señal + Ruido')
-ax1.plot(t[:500], signal_clean[:500], 'g--', linewidth=2, alpha=0.7, label='Señal Original')
-ax1.set_title('Señal de Entrada')
-ax1.set_ylabel('Amplitud')
-ax1.legend()
-ax1.grid(True, alpha=0.3)
+    # Señal original
+    ax1.plot(t[:500], signal_input[:500], 'b-', linewidth=1, label='Señal + Ruido')
+    ax1.plot(t[:500], signal_clean[:500], 'g--', linewidth=2, alpha=0.7, label='Señal Original')
+    ax1.set_title('Señal de Entrada')
+    ax1.set_ylabel('Amplitud')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
 
-# Señal filtrada
-ax2.plot(t[:500], signal_filtered[:500], 'r-', linewidth=1.5, label='Señal Filtrada')
-ax2.plot(t[:500], signal_clean[:500], 'g--', linewidth=2, alpha=0.7, label='Señal Original')
-ax2.set_title(f'Señal Filtrada - {filter_type}')
-ax2.set_ylabel('Amplitud')
-ax2.legend()
-ax2.grid(True, alpha=0.3)
+    # Señal filtrada
+    ax2.plot(t[:500], signal_filtered[:500], 'r-', linewidth=1.5, label='Señal Filtrada')
+    ax2.plot(t[:500], signal_clean[:500], 'g--', linewidth=2, alpha=0.7, label='Señal Original')
+    ax2.set_title(f'Señal Filtrada - {filter_type}')
+    ax2.set_ylabel('Amplitud')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
 
-# Comparación
-ax3.plot(t[:500], signal_input[:500], 'b-', linewidth=1, alpha=0.6, label='Entrada')
-ax3.plot(t[:500], signal_filtered[:500], 'r-', linewidth=1.5, label='Filtrada')
-ax3.set_title('Comparación')
-ax3.set_xlabel('Tiempo (s)')
-ax3.set_ylabel('Amplitud')
-ax3.legend()
-ax3.grid(True, alpha=0.3)
+    # Comparación
+    ax3.plot(t[:500], signal_input[:500], 'b-', linewidth=1, alpha=0.6, label='Entrada')
+    ax3.plot(t[:500], signal_filtered[:500], 'r-', linewidth=1.5, label='Filtrada')
+    ax3.set_title('Comparación')
+    ax3.set_xlabel('Tiempo (s)')
+    ax3.set_ylabel('Amplitud')
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
 
-plt.tight_layout()
-st.pyplot(fig)
+    plt.tight_layout()
+    st.pyplot(fig)
+    
+with col2:
+    st.subheader("📊 Análisis Frecuencial")
+    
+    # FFT de las señales
+    fft_input = np.fft.fft(signal_input)
+    fft_filtered = np.fft.fft(signal_filtered)
+    freqs = np.fft.fftfreq(len(signal_input), 1/fs)
+    
+    # Solo frecuencias positivas
+    pos_mask = freqs > 0
+    freqs_pos = freqs[pos_mask]
+    fft_input_pos = np.abs(fft_input[pos_mask])
+    fft_filtered_pos = np.abs(fft_filtered[pos_mask])
+    
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
+    
+    # Espectro de entrada
+    ax1.plot(freqs_pos[:len(freqs_pos)//4], fft_input_pos[:len(freqs_pos)//4], 'b-', linewidth=1.5)
+    ax1.set_title('Espectro de Frecuencias - Entrada')
+    ax1.set_ylabel('Magnitud')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_xlim(0, 100)
+    
+    # Espectro filtrado
+    ax2.plot(freqs_pos[:len(freqs_pos)//4], fft_filtered_pos[:len(freqs_pos)//4], 'r-', linewidth=1.5)
+    ax2.set_title('Espectro de Frecuencias - Filtrada')
+    ax2.set_ylabel('Magnitud')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_xlim(0, 100)
+    
+    # Comparación de espectros
+    ax3.plot(freqs_pos[:len(freqs_pos)//4], fft_input_pos[:len(freqs_pos)//4], 'b-', 
+             linewidth=1, alpha=0.6, label='Entrada')
+    ax3.plot(freqs_pos[:len(freqs_pos)//4], fft_filtered_pos[:len(freqs_pos)//4], 'r-', 
+             linewidth=1.5, label='Filtrada')
+    ax3.set_title('Comparación Espectral')
+    ax3.set_xlabel('Frecuencia (Hz)')
+    ax3.set_ylabel('Magnitud')
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    ax3.set_xlim(0, 100)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
 
 # Respuesta en frecuencia del filtro
 st.subheader("🎯 Respuesta en Frecuencia del Filtro")
@@ -130,37 +183,6 @@ st.subheader("🎯 Respuesta en Frecuencia del Filtro")
 w, h = signal.freqz(b, a, worN=8000)
 freq_response = w * fs / (2 * np.pi)
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 6))
-
-# Magnitud
-ax1.plot(freq_response, 20 * np.log10(abs(h)), 'g-', linewidth=2)
-ax1.set_title(f'Respuesta en Magnitud - Filtro {filter_type}')
-ax1.set_xlabel('Frecuencia (Hz)')
-ax1.set_ylabel('Magnitud (dB)')
-ax1.grid(True, alpha=0.3)
-ax1.set_xlim(0, 100)
-
-# Marcar frecuencias de corte
-if filter_type == "Pasa-Bajo":
-    ax1.axvline(cutoff, color='red', linestyle='--', alpha=0.7, label=f'Fc = {cutoff} Hz')
-
-ax1.legend()
-
-# Fase
-phase = np.unwrap(np.angle(h))
-ax2.plot(freq_response, np.degrees(phase), 'purple', linewidth=2)
-ax2.set_title('Respuesta en Fase')
-ax2.set_xlabel('Frecuencia (Hz)')
-ax2.set_ylabel('Fase (grados)')
-ax2.grid(True, alpha=0.3)
-ax2.set_xlim(0, 500)
-
-# Marcar frecuencias de corte
-if filter_type == "Pasa-Bajo":
-    ax2.axvline(cutoff, color='red', linestyle='--', alpha=0.7, label=f'Fc = {cutoff} Hz')
-
-plt.tight_layout()
-st.pyplot(fig)
 
 # Información adicional
 st.subheader("📋 Información del Filtro")
@@ -169,29 +191,34 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric("Tipo de Filtro", filter_type)
-    st.metric("Orden del Filtro", order)
 
 with col2:
     if filter_type in ["Pasa-Bajo", "Pasa-Alto"]:
         st.metric("Frecuencia de Corte", f"{cutoff:.2f} Hz")
-    
-    st.metric("Frecuencia de Muestreo", f"{fs} Hz")
 
 with col3:
-    # Calcular atenuación en la frecuencia del ruido
+    # Calcular atenuación en la frecuencia del ruido (en voltaje)
     noise_freq_idx = np.argmin(np.abs(freq_response - freq_noise))
-    attenuation = 20 * np.log10(abs(h[noise_freq_idx]))
-    st.metric("Atenuación del Ruido", f"{attenuation:.2f} dB")
+    attenuation_voltage = abs(h[noise_freq_idx])
+    st.metric("Atenuación del Ruido", f"{attenuation_voltage:.2f} V")
     
-    # SNR mejorado
-    snr_input = 20 * np.log10(amplitude_signal / amplitude_noise)
-    signal_power_filtered = np.var(signal_filtered)
-    noise_power_filtered = np.var(signal_filtered - signal_clean)
-    if noise_power_filtered > 0:
-        snr_output = 10 * np.log10(signal_power_filtered / noise_power_filtered)
-        st.metric("Mejora SNR", f"{snr_output - snr_input:.2f} dB")
-    else:
-        st.metric("Mejora SNR", "∞ dB")
+st.subheader("🔍 Respuesta del Filtro en Voltaje (V/V)")
+
+# Obtener respuesta en frecuencia del filtro
+w, h = signal.freqz(b, a, worN=8000, fs=fs)  # fs incluido para escala en Hz
+magnitude = np.abs(h)  # voltaje V/V
+
+# Crear gráfico de respuesta en frecuencia (lineal)
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(w, magnitude, 'b')
+ax.set_title('Respuesta en Frecuencia del Filtro (Magnitud en Voltaje)')
+ax.set_xlabel('Frecuencia (Hz)')
+ax.set_ylabel('Ganancia (V/V)')
+ax.grid(True, alpha=0.3)
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 1.2)
+
+st.pyplot(fig)
 
 # Explicación del filtro
 st.subheader("💡 Explicación")
