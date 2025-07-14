@@ -31,7 +31,7 @@ cols = st.columns(3, vertical_alignment= "center")
 # Configuración de imágenes locales y sus páginas destino
 opciones = [
     {"nombre": "Opción 1", "archivo": "RL1.jpg", "pagina": "Opcion1"},
-    {"nombre": "Opción 2", "archivo": "RL2.jpg", "pagina": "PasaBajos"},
+    {"nombre": "Opción 2", "archivo": "RL2.jpg", "pagina": "PasaBajosRC"},
     {"nombre": "Opción 3", "archivo": "RLC1.jpg", "pagina": "Opcion3"},
 ]
 

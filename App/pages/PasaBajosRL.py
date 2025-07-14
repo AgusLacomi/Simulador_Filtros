@@ -10,6 +10,11 @@ import pandas as pd
 MODO_FC = "A"  # Modo inicial para la frecuencia de corte
 MODO_TAU = "B"  # Modo alternativo para el tiempo característico
 
+MAX_FREQUENCY_SIGNAL = 100.0  # Frecuencia máxima de la señal
+MAX_FREQUENCY_NOISE = 100.0  # Frecuencia máxima del ruido
+MAX_VALUE_SIGNAL = 5.0  # Amplitud máxima de la señal
+MAX_VALUE_NOISE = 1.0  # Amplitud máxima del ruido
+
 # Configuración de la página
 st.set_page_config(
     page_title="Simulador de Filtros de Señales",
@@ -24,10 +29,10 @@ st.markdown("### Explora el comportamiento del filtro pasa-bajo")
 st.sidebar.header("Parámetros de la Señal")
 
 # Parámetros de la señal de entrada
-freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz) 1 a 100", min_value=1.0, max_value=100.0, step=0.1)
-freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz) 1 a 100", min_value=1.0, max_value=100.0, step=0.1)
-amplitude_signal = st.sidebar.number_input("Amplitud de la señal 0,1 a 12", min_value=0.1, max_value=12.0)
-amplitude_noise = st.sidebar.number_input("Amplitud del ruido 0,01 a 1", min_value=0.01, max_value=1.0, step=0.1)
+freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz) 1.0 a " f"{MAX_FREQUENCY_SIGNAL}", min_value=1.0, max_value=MAX_FREQUENCY_SIGNAL, step=0.1)
+freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz) 1.0 a " f"{MAX_FREQUENCY_NOISE}", min_value=1.0, max_value=MAX_FREQUENCY_NOISE, step=0.1)
+amplitude_signal = st.sidebar.number_input("Amplitud de la señal 0.1 a " f"{MAX_VALUE_SIGNAL}", min_value=0.1, max_value=6.0)
+amplitude_noise = st.sidebar.number_input("Amplitud del ruido 0.01 a " f"{MAX_VALUE_NOISE}", min_value=0.01, max_value=1.0, step=0.1)
 
 #freq_signal = st.sidebar.slider("Frecuencia de la señal principal (Hz)", 1, 1000, 10)
 #freq_noise = st.sidebar.slider("Frecuencia del ruido (Hz)", 1, 200, 50)
@@ -57,8 +62,7 @@ if filter_type == "Pasa-Bajo":
     if "modo" not in st.session_state:
         st.session_state.modo = MODO_FC
     
-    st.sidebar.button( "Frecuencia de Corte" if st.session_state.modo == MODO_FC else "Tiempo Característico",
-    on_click = alternar_modo)
+    st.sidebar.button( "Frecuencia de Corte" if st.session_state.modo == MODO_FC else "Tiempo Característico", on_click = alternar_modo)
 
     # Mostrar contenido según modo
     if st.session_state.modo == MODO_FC:
@@ -66,19 +70,23 @@ if filter_type == "Pasa-Bajo":
         cutoff = st.sidebar.number_input("Frecuencia de corte (Hz)", min_value=1.0, max_value=100.0, step=0.1)
         #cutoff = st.sidebar.slider("Frecuencia de corte (Hz)", 0.1, 100.0, 10.0)
     else:
-        """valor = st.number_input("Ingresa un valor numérico (Modo B)", min_value=0, max_value=100)
-        st.write("Valor ingresado:", valor)"""
+        #valor = st.number_input("Ingresa un valor numérico (Modo B)", min_value=0, max_value=100)
+        #st.write("Valor ingresado:", valor)
         resist = st.sidebar.number_input("valor R1 - Resistencia (Ω)", min_value = 1.0, max_value = 10.0, step=0.1)
         capacitance = st.sidebar.number_input("valor C1 - Capacitancia (ϝ)", min_value = 1.0, max_value = 10.0, step=0.1)
         cutoff =  1 / (2 * np.pi * resist * capacitance)  # Frecuencia de corte calculada
     
-    order = st.sidebar.slider("Orden del filtro", 1, 10, 4)
+    order = 1 # Orden del filtro fijo
 
     
     # Diseño del filtro pasa-bajo
     nyquist = fs / 2
     normal_cutoff = cutoff / nyquist
     b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
+
+#Informacion proporcionada al usuario
+st.sidebar.header("Estimación util")
+
 
 # Aplicar filtro
 signal_filtered = signal.filtfilt(b, a, signal_input)
