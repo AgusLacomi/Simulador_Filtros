@@ -10,11 +10,6 @@ import pandas as pd
 MODO_FC = "A"  # Modo inicial para la frecuencia de corte
 MODO_TAU = "B"  # Modo alternativo para el tiempo característico
 
-MAX_FREQUENCY_SIGNAL = 100.0  # Frecuencia máxima de la señal
-MAX_FREQUENCY_NOISE = 100.0  # Frecuencia máxima del ruido
-MAX_VALUE_SIGNAL = 5.0  # Amplitud máxima de la señal
-MAX_VALUE_NOISE = 1.0  # Amplitud máxima del ruido
-
 # Configuración de la página
 st.set_page_config(
     page_title="Simulador de Filtros de Señales",
@@ -34,14 +29,21 @@ waveform_type = st.sidebar.selectbox(
     ["Sinusoidal", "Cuadrada", "Diente de sierra"]
 )
 
+st.sidebar.header("Tipo de Ruido")
+noise_type = st.sidebar.selectbox(
+    "Tipo de ruido",
+    ["Blanco", "Seno con fase aleatoria", "Ruido banda estrecha"]
+)
+
 
 st.sidebar.header("Parámetros de la Señal")
 
 # Parámetros de la señal de entrada
-freq_signal = st.sidebar.number_input("Frecuencia de la señal principal 1.0 a " f"{MAX_FREQUENCY_SIGNAL} (Hz)", min_value=1.0, max_value=MAX_FREQUENCY_SIGNAL, step=0.1)
-freq_noise = st.sidebar.number_input("Frecuencia del ruido 1.0 a " f"{MAX_FREQUENCY_NOISE} (Hz)", min_value=1.0, max_value=MAX_FREQUENCY_NOISE, step=0.1)
-amplitude_signal = st.sidebar.number_input("Amplitud de la señal 0.1 a " f"{MAX_VALUE_SIGNAL} (V)", min_value=0.1, max_value=6.0)
-amplitude_noise = st.sidebar.number_input("Amplitud del ruido 0.01 a " f"{MAX_VALUE_NOISE} (V)", min_value=0.01, max_value=1.0, step=0.1)
+freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz)", 1, 100, 10)
+freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz)", 20, 200, 50)
+
+amplitude_signal = st.sidebar.number_input("Amplitud de la señal (V)", 0.1, 5.0, 1.0, 0.1)
+amplitude_noise = st.sidebar.number_input("Amplitud del ruido (V)", 0.0, 1.0, 0.3, 0.1)
 
 #freq_signal = st.sidebar.slider("Frecuencia de la señal principal (Hz)", 1, 1000, 10)
 #freq_noise = st.sidebar.slider("Frecuencia del ruido (Hz)", 1, 200, 50)
@@ -54,7 +56,31 @@ filter_type = "Pasa-Bajo"  # Filtro fijo para este ejemplo
 
 # Frecuencia de muestreo
 fs = 1000  # Hz
-t = np.linspace(0, 2, fs * 2, endpoint=False)
+
+def band_limited_noise(min_freq, max_freq, samples, sample_rate):
+    freqs = np.fft.fftfreq(samples, 1/sample_rate)
+    spectrum = np.zeros(samples, dtype=complex)
+
+    # Activar solo las componentes entre min y max freq
+    mask = (np.abs(freqs) >= min_freq) & (np.abs(freqs) <= max_freq)
+    spectrum[mask] = np.random.randn(np.count_nonzero(mask)) + 1j * np.random.randn(np.count_nonzero(mask))
+
+    # Convertir a dominio del tiempo
+    noise = np.fft.ifft(spectrum).real
+    noise = noise / np.max(np.abs(noise))  # normalizar
+
+    return noise
+
+if noise_type == "Seno con fase aleatoria":
+    t = np.linspace(0, 1, fs, endpoint=False)
+    phi = np.random.uniform(0, 2*np.pi)  # fase aleatoria
+    noise = amplitude_noise * np.sin(2 * np.pi * freq_noise * t + phi)
+elif noise_type == "Ruido banda estrecha":
+    t = np.linspace(0, 1, fs, endpoint=False)
+    noise = band_limited_noise((freq_noise - 5), (freq_noise + 5) , fs, fs)  # ruido centrado en 60Hz ±5Hz
+elif noise_type == "Blanco":
+    t = np.linspace(0, 1, fs, endpoint=False)
+    noise = amplitude_noise * np.random.normal(0, 1, size = t.shape)
 
 # Generar señal base según tipo seleccionado
 if waveform_type == "Sinusoidal":
@@ -63,45 +89,27 @@ elif waveform_type == "Cuadrada":
     signal_clean = amplitude_signal * signal.square(2 * np.pi * freq_signal * t)
 elif waveform_type == "Diente de sierra":
     signal_clean = amplitude_signal * signal.sawtooth(2 * np.pi * freq_signal * t)
-noise = amplitude_noise * np.sin(2 * np.pi * freq_noise * t)
+
 signal_input = signal_clean + noise
 
 
-# Función para alternar entre modos
-def alternar_modo():
-    st.session_state.modo = MODO_TAU if st.session_state.modo == MODO_FC else "A"
 
 # Parámetros específicos del filtro
 if filter_type == "Pasa-Bajo":
-    # Inicializar el estado si no existe
-    if "modo" not in st.session_state:
-        st.session_state.modo = MODO_FC
-    
-    st.sidebar.button( "Frecuencia de Corte" if st.session_state.modo == MODO_FC else "Tiempo Característico", on_click = alternar_modo)
+        
+    #Informacion proporcionada al usuario
+    st.sidebar.header("Estimaciones Útiles")
+    cutoff_estimated = np.sqrt(freq_signal * freq_noise)
+    st.sidebar.write("Frecuencia de corte estimada: ", f"{cutoff_estimated:.2f} Hz")
 
-    # Mostrar contenido según modo
-    if st.session_state.modo == MODO_FC:
-        # st.sidebar.success("Este es el contenido de la sidebar (Modo A)")
-        cutoff = st.sidebar.number_input("Frecuencia de corte (Hz)", min_value=1.0, max_value=100.0, step=0.1)
-        #cutoff = st.sidebar.slider("Frecuencia de corte (Hz)", 0.1, 100.0, 10.0)
-    else:
-        #valor = st.number_input("Ingresa un valor numérico (Modo B)", min_value=0, max_value=100)
-        #st.write("Valor ingresado:", valor)
-        resist = st.sidebar.number_input("valor R1 - Resistencia (Ω)", min_value = 0.1, max_value = 10.0, step=0.5)
-        capacitance = st.sidebar.number_input("valor C1 - Capacitancia (ϝ)", min_value = 0.1, max_value = 10.0, step=0.1)
-        cutoff =  1 / (2 * np.pi * resist * (capacitance))  # Frecuencia de corte calculada
-    
+    cutoff = st.sidebar.number_input("Frecuencia de corte (Hz)", 1.0, 100.0, cutoff_estimated,0.1)
+        
     order = 1 # Orden del filtro fijo
-
+    
     # Diseño del filtro pasa-bajo
     nyquist = fs / 2
     normal_cutoff = cutoff / nyquist
     b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
-
-#Informacion proporcionada al usuario
-st.sidebar.header("Estimaciones Útiles")
-cutoff_estimated = np.sqrt(freq_signal * freq_noise)
-st.sidebar.write("Frecuencia de corte estimada: ", f"{cutoff_estimated:.2f} Hz")
 
 # Aplicar filtro
 signal_filtered = signal.filtfilt(b, a, signal_input)
@@ -201,7 +209,7 @@ ax.set_ylabel("Ganancia (V/V)")
 ax.grid(True, alpha=0.3)
 
 # Dibujar línea de corte según tipo de filtro
-if filter_type == "Pasa-Bajo" or filter_type == "Pasa-Alto":
+if filter_type == "Pasa-Bajo":
     ax.axvline(cutoff, color='red', linestyle='--', label=f"Frecuencia de corte: {cutoff} Hz")
 
 ax.set_xlim(0, 100)

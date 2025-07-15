@@ -30,7 +30,6 @@ img_dir = Path(__file__).parent / "images"
 opciones = [
     {"nombre": "Opción PARC", "archivo": "RC1.jpg", "pagina": "Opcion1"},
     {"nombre": "Opción PBRC", "archivo": "RC2.jpg", "pagina": "PasaBajosRC"},
-    {"nombre": "Opción PBRL", "archivo": "RL2.jpg", "pagina": "PasaBajosRL"},
     {"nombre": "Opción 3", "archivo": "RLC1.jpg", "pagina": "Opcion3"},
 ]
 cols = st.columns(3, vertical_alignment= "center")
