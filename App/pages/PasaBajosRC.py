@@ -7,9 +7,6 @@ import matplotlib.pyplot as plt
 from scipy import signal
 import pandas as pd
 
-MODO_FC = "A"  # Modo inicial para la frecuencia de corte
-MODO_TAU = "B"  # Modo alternativo para el tiempo característico
-
 # Configuración de la página
 st.set_page_config(
     page_title="Simulador de Filtros de Señales",
@@ -19,6 +16,9 @@ st.set_page_config(
 
 st.title("🔧 Simulador de Filtros de Señales")
 st.markdown("### Explora el comportamiento del filtro pasa-bajo")
+
+# Parámetros del filtro
+filter_type = "Pasa-Bajo"  # Filtro fijo para este ejemplo
 
 # Sidebar para controles
 
@@ -45,14 +45,8 @@ freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz)", 20, 200, 50)
 amplitude_signal = st.sidebar.number_input("Amplitud de la señal (V)", 0.1, 5.0, 1.0, 0.1)
 amplitude_noise = st.sidebar.number_input("Amplitud del ruido (V)", 0.0, 1.0, 0.3, 0.1)
 
-#freq_signal = st.sidebar.slider("Frecuencia de la señal principal (Hz)", 1, 1000, 10)
-#freq_noise = st.sidebar.slider("Frecuencia del ruido (Hz)", 1, 200, 50)
-#amplitude_signal = st.sidebar.slider("Amplitud de la señal", 0.1, 2.0, 1.0, 0.1)
-#amplitude_noise = st.sidebar.slider("Amplitud del ruido", 0.0, 1.0, 0.3, 0.1)
 
-# Parámetros del filtro
 st.sidebar.header("Parámetros del Filtro")
-filter_type = "Pasa-Bajo"  # Filtro fijo para este ejemplo
 
 # Frecuencia de muestreo
 fs = 1000  # Hz
@@ -190,6 +184,7 @@ with col2:
     ax3.legend()
     ax3.grid(True, alpha=0.3)
     ax3.set_xlim(0, 100)
+    ax3.axvline(cutoff, color='red', linestyle='--', label=f"Fc: {cutoff:.2f} Hz")
     
     plt.tight_layout()
     st.pyplot(fig)
@@ -210,7 +205,7 @@ ax.grid(True, alpha=0.3)
 
 # Dibujar línea de corte según tipo de filtro
 if filter_type == "Pasa-Bajo":
-    ax.axvline(cutoff, color='red', linestyle='--', label=f"Frecuencia de corte: {cutoff} Hz")
+    ax.axvline(cutoff, color='red', linestyle='--', label=f"Fc: {cutoff:.2f} Hz")
 
 ax.set_xlim(0, 100)
 ax.set_ylim(0, 1.1)

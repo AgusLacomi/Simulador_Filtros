@@ -24,18 +24,51 @@ waveform_type = st.sidebar.selectbox(
     ["Sinusoidal", "Cuadrada", "Diente de sierra"]
 )
 
+st.sidebar.header("Tipo de Ruido")
+noise_type = st.sidebar.selectbox(
+    "Tipo de ruido",
+    ["Blanco", "Seno con fase aleatoria", "Ruido banda estrecha"]
+)
 
-st.sidebar.header("Parámetros de la Señal")
 
 # Parámetros de la señal de entrada
 freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz)", 1, 100, 10)
 freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz)", 1, 200, 50)
+
 amplitude_signal = st.sidebar.number_input("Amplitud de la señal (V)", 0.1, 5.0, 1.0, 0.1)
 amplitude_noise = st.sidebar.number_input("Amplitud del ruido (V)", 0.0, 1.0, 0.3, 0.1)
 
+st.sidebar.header("Parámetros de la Señal")
+
 # Frecuencia de muestreo
 fs = 1000  # Hz
-t = np.linspace(0, 2, fs * 2, endpoint=False)
+
+
+def band_limited_noise(min_freq, max_freq, samples, sample_rate):
+    freqs = np.fft.fftfreq(samples, 1/sample_rate)
+    spectrum = np.zeros(samples, dtype=complex)
+
+    # Activar solo las componentes entre min y max freq
+    mask = (np.abs(freqs) >= min_freq) & (np.abs(freqs) <= max_freq)
+    spectrum[mask] = np.random.randn(np.count_nonzero(mask)) + 1j * np.random.randn(np.count_nonzero(mask))
+
+    # Convertir a dominio del tiempo
+    noise = np.fft.ifft(spectrum).real
+    noise = noise / np.max(np.abs(noise))  # normalizar
+
+    return noise
+
+if noise_type == "Seno con fase aleatoria":
+    t = np.linspace(0, 1, fs, endpoint=False)
+    phi = np.random.uniform(0, 2*np.pi)  # fase aleatoria
+    noise = amplitude_noise * np.sin(2 * np.pi * freq_noise * t + phi)
+elif noise_type == "Ruido banda estrecha":
+    t = np.linspace(0, 1, fs, endpoint=False)
+    noise = band_limited_noise((freq_noise - 5), (freq_noise + 5) , fs, fs)  # ruido centrado en 60Hz ±5Hz
+elif noise_type == "Blanco":
+    t = np.linspace(0, 1, fs, endpoint=False)
+    noise = amplitude_noise * np.random.normal(0, 1, size = t.shape)
+
 
 # Generar señal base según tipo seleccionado
 if waveform_type == "Sinusoidal":
@@ -44,14 +77,21 @@ elif waveform_type == "Cuadrada":
     signal_clean = amplitude_signal * signal.square(2 * np.pi * freq_signal * t)
 elif waveform_type == "Diente de sierra":
     signal_clean = amplitude_signal * signal.sawtooth(2 * np.pi * freq_signal * t)
-noise = amplitude_noise * np.sin(2 * np.pi * freq_noise * t)
+
 signal_input = signal_clean + noise
 
 # Parámetros específicos del filtro
 
 if filter_type == "Pasa-Alto":
-    cutoff = st.sidebar.slider("Frecuencia de corte (Hz)", 1, 100, 20)
-    order = st.sidebar.slider("Orden del filtro", 1, 10, 4)
+        
+    #Informacion proporcionada al usuario
+    st.sidebar.header("Estimaciones Útiles")
+    cutoff_estimated = np.sqrt(freq_signal * freq_noise)
+    st.sidebar.write("Frecuencia de corte estimada: ", f"{cutoff_estimated:.2f} Hz")
+
+    cutoff = st.sidebar.number_input("Frecuencia de corte (Hz)", 1.0, 100.0, cutoff_estimated,0.1)
+        
+    order = 1 # Orden del filtro fijo
     
     # Diseño del filtro pasa-alto
     nyquist = fs / 2
@@ -144,6 +184,44 @@ with col2:
     plt.tight_layout()
     st.pyplot(fig)
 
+
+st.subheader("🎚️ Ganancia en Voltaje vs Frecuencia")
+
+# Calcular respuesta en frecuencia del filtro
+w, h = signal.freqz(b, a, worN=8000, fs=fs)
+gain_voltage = np.abs(h)
+
+# Crear figura
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(w, gain_voltage, label="Ganancia (V/V)", color='blue')
+ax.set_title("Respuesta en Frecuencia (Voltaje)")
+ax.set_xlabel("Frecuencia (Hz)")
+ax.set_ylabel("Ganancia (V/V)")
+ax.grid(True, alpha=0.3)
+
+# Dibujar línea de corte según tipo de filtro
+if filter_type == "Pasa-Alto":
+    ax.axvline(cutoff, color='red', linestyle='--', label=f"Fc: {cutoff:.2f} Hz")
+
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 1.1)
+ax.legend()
+st.pyplot(fig)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("Tipo de Filtro", filter_type)
+
+with col2:
+    if filter_type in ["Pasa-Bajo", "Pasa-Alto"]:
+        st.metric("Frecuencia de Corte", f"{cutoff:.2f} Hz")
+
+with col3:
+    # Calcular atenuación en la frecuencia del ruido (en voltaje)
+    noise_freq_idx = np.argmin(np.abs(freq_signal - freq_noise))
+    attenuation_voltage = abs(h[noise_freq_idx])
+    st.metric("Atenuación del Ruido", f"{attenuation_voltage:.2f} V")
 
 # Explicación del filtro
 st.subheader("💡 Explicación")
