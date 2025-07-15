@@ -43,7 +43,6 @@ st.sidebar.header("Parámetros de la Señal")
 # Frecuencia de muestreo
 fs = 1000  # Hz
 
-
 def band_limited_noise(min_freq, max_freq, samples, sample_rate):
     freqs = np.fft.fftfreq(samples, 1/sample_rate)
     spectrum = np.zeros(samples, dtype=complex)
@@ -173,7 +172,7 @@ with col2:
              linewidth=1, alpha=0.6, label='Entrada')
     ax3.plot(freqs_pos[:len(freqs_pos)//4], fft_filtered_pos[:len(freqs_pos)//4], 'r-', 
              linewidth=1.5, label='Filtrada')
-    ax3.axvline(cutoff, color='red', linestyle='--', label=f"Fc: {cutoff} Hz")
+    ax3.axvline(cutoff, color='red', linestyle='--', label=f"Fc: {cutoff:.2f} Hz")
     ax3.set_title('Comparación Espectral')
     ax3.set_xlabel('Frecuencia (Hz)')
     ax3.set_ylabel('Magnitud')

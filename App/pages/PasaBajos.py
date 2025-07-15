@@ -14,7 +14,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🔧 Simulador de Filtros de Señales")
+st.title("🔧 Simulador de Filtro Pasa-Bajo")
 st.markdown("### Explora el comportamiento del filtro pasa-bajo")
 
 # Parámetros del filtro
