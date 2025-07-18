@@ -42,7 +42,7 @@ def toggle_image(button_index):
 for idx, (col, opcion) in enumerate(zip(cols, opciones)):
 
     with col:
-        if st.button("🔄 Cambiar", key=f"toggle_{idx}"):
+        if st.button("🔄 Cambiar", key=f"toggle_{idx}", help = "Permite ver las diferentes distribuciones"):
             toggle_image(idx)
         
         # Determinar qué imagen mostrar
@@ -66,10 +66,19 @@ for idx, (col, opcion) in enumerate(zip(cols, opciones)):
         left_spacer, center_col, right_spacer = st.columns([1, 1, 1])
         with center_col:
             if st.button(
-                label=f"opcion{idx+1}",
+                label=f"Seleccionar {idx+1}",
                 key=f"btn_{idx}"
             ):
                 st.session_state.page_to_go = opcion["pagina"]
+
+with st.expander("¿Qué hace este Simulador? ❓"):
+    st.markdown("""
+    Trabajo realizado por Agustín Lacomi para la asignatura de Físisca 2.
+
+    - Podrás simular filtros eléctricos pasivos de primer orden (Pasa-Bajo, Pasa-Alto y Pasa-Banda).
+    
+    Elegí multiples opciones para ver los comportamientos de los filtros y su respuesta en frecuencia.
+    """)
 
 # Redirección fuera del bucle de botones
 if "page_to_go" in st.session_state:

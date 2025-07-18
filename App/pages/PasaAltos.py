@@ -11,32 +11,36 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🔧 Simulador de Filtro Pasa-Alto")
+st.title("🔧 Simulador de Filtro Pasa-Alto", help= "Un Filtro Pasa-Alto atenúa las frecuencias inferiores a la frecuencia de corte del mismo")
 st.markdown("### Explora el comportamiento del filtro pasa-alto ###")
 
 # Parámetros del filtro
 filter_type = "Pasa-Alto"
 
 # Tipo de señal de entrada
-st.sidebar.header("Forma de la Señal")
+st.sidebar.header("Forma de la Señal",help="Selecciona el tipo de señal que deseas simular")
 waveform_type = st.sidebar.selectbox(
-    "Tipo de señal",
-    ["Sinusoidal", "Cuadrada", "Diente de sierra"]
+    "Selección de la señal",
+    ["Sinusoidal", "Cuadrada", "Diente de sierra"]    
 )
 
-st.sidebar.header("Tipo de Ruido")
+st.sidebar.header("Forma del Ruido",help="Selecciona el tipo de ruido que deseas añadir a la señal")
 noise_type = st.sidebar.selectbox(
-    "Tipo de ruido",
+    "Selección del ruido",
     ["Blanco", "Seno con fase aleatoria", "Ruido banda estrecha"]
 )
 
 
-# Parámetros de la señal de entrada
-freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz)", 1, 100, 10)
-freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz)", 1, 200, 50)
 
+# Parámetros de la señal de entrada
+st.sidebar.header("Parámetros de la Señal", help="Configura la frecuencia y amplitud de la señal")
 amplitude_signal = st.sidebar.number_input("Amplitud de la señal (V)", 0.1, 5.0, 1.0, 0.1)
+freq_signal = st.sidebar.number_input("Frecuencia de la señal principal (Hz)", 1, 100, 10)
+
+# Parámetros del ruido
+st.sidebar.header("Parámetros del Ruido", help="Configura la frecuencia y amplitud del ruido")
 amplitude_noise = st.sidebar.number_input("Amplitud del ruido (V)", 0.0, 1.0, 0.3, 0.1)
+freq_noise = st.sidebar.number_input("Frecuencia del ruido (Hz)", 20, 200, 50)
 
 st.sidebar.header("Parámetros de la Señal")
 
@@ -80,17 +84,16 @@ elif waveform_type == "Diente de sierra":
 signal_input = signal_clean + noise
 
 # Parámetros específicos del filtro
-
 if filter_type == "Pasa-Alto":
         
     #Informacion proporcionada al usuario
-    st.sidebar.header("Estimaciones Útiles")
+    st.sidebar.header("Estimacion Útil")
     cutoff_estimated = np.sqrt(freq_signal * freq_noise)
     st.sidebar.write("Frecuencia de corte estimada: ", f"{cutoff_estimated:.2f} Hz")
+    order = st.sidebar.slider("Orden del filtro", 1, 10, 1, help="El orden del filtro afecta la pendiente de la atenuación")
 
-    cutoff = st.sidebar.number_input("Frecuencia de corte (Hz)", 1.0, 100.0, cutoff_estimated,0.1)
-        
-    order = 1 # Orden del filtro fijo
+    st.sidebar.header("Frecuencia de Corte (Hz)")
+    cutoff = st.sidebar.number_input("Seleccione la Frecuencia de corte", 1.0, 100.0, cutoff_estimated,0.1, help = "Las frecuencias superiores NO serán atenuadas")
     
     # Diseño del filtro pasa-alto
     nyquist = fs / 2
@@ -207,27 +210,36 @@ ax.set_ylim(0, 1.1)
 ax.legend()
 st.pyplot(fig)
 
-col1, col2, col3 = st.columns(3)
+# Información adicional
+st.subheader("📋 Información del Filtro")
+
+col1, col2= st.columns(2)
 
 with col1:
     st.metric("Tipo de Filtro", filter_type)
+    st.metric("Orden del Filtro", order)
 
 with col2:
     if filter_type in ["Pasa-Bajo", "Pasa-Alto"]:
         st.metric("Frecuencia de Corte", f"{cutoff:.2f} Hz")
-
-with col3:
-    # Calcular atenuación en la frecuencia del ruido (en voltaje)
-    noise_freq_idx = np.argmin(np.abs(freq_signal - freq_noise))
-    attenuation_voltage = abs(h[noise_freq_idx])
-    st.metric("Atenuación del Ruido", f"{attenuation_voltage:.2f} V")
+    
 
 # Explicación del filtro
 st.subheader("💡 Explicación")
-if filter_type == "Pasa-Alto":
+if filter_type == "Pasa-Bajo":
+    st.info("""
+    **Filtro Pasa-Bajo**: Permite el paso de frecuencias por debajo de la frecuencia de corte 
+    y atenúa las frecuencias superiores. Útil para eliminar ruido de alta frecuencia.
+    """)
+elif filter_type == "Pasa-Alto":
     st.info("""
     **Filtro Pasa-Alto**: Permite el paso de frecuencias por encima de la frecuencia de corte 
     y atenúa las frecuencias inferiores. Útil para eliminar componentes de baja frecuencia como DC offset.
+    """)
+else:
+    st.info("""
+    **Filtro Pasa-Banda**: Permite el paso de frecuencias dentro de un rango específico 
+    y atenúa tanto las frecuencias más bajas como las más altas. Útil para seleccionar una banda específica.
     """)
 
 if st.button(

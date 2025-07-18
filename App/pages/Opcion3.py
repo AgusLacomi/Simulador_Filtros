@@ -82,8 +82,7 @@ signal_input = signal_clean + noise
 if filter_type == "Pasa-Banda":
     low_freq = st.sidebar.slider("Frecuencia inferior (Hz)", 1, 80, 15)
     high_freq = st.sidebar.slider("Frecuencia superior (Hz)", 1, 100, 35)
-    
-    order = 2
+    order = st.sidebar.slider("Orden del filtro", 1, 10, 2, help="El orden del filtro afecta la pendiente de la atenuación")
     
     # Diseño del filtro pasa-banda
     nyquist = fs / 2
@@ -204,7 +203,7 @@ st.pyplot(fig)
 # Información adicional
 st.subheader("📋 Información del Filtro")
 
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
     st.metric("Tipo de Filtro", filter_type)
@@ -213,12 +212,6 @@ with col1:
 with col2:
     st.metric("Banda de Paso", f"{low_freq}-{high_freq} Hz")
     st.metric("Frecuencia de Muestreo", f"{fs} Hz")
-
-with col3:
-    # Calcular atenuación en la frecuencia del ruido (en voltaje)
-    noise_freq_idx = np.argmin(np.abs(freq_signal - freq_noise))
-    attenuation_voltage = abs(h[noise_freq_idx])
-    st.metric("Atenuación del Ruido", f"{attenuation_voltage:.2f} V")
 
 # Explicación del filtro
 st.subheader("💡 Explicación")
