@@ -30,7 +30,7 @@ img_dir = Path(__file__).parent / "images"
 opciones = [
     {"nombre": "Opción PARC", "archivo": "RC1.jpg", "pagina": "PasaAltos"},
     {"nombre": "Opción PBRC", "archivo": "RC2.jpg", "pagina": "PasaBajos"},
-    {"nombre": "Opción 3", "archivo": "RLC1.jpg", "pagina": "Opcion3"},
+    {"nombre": "Opción 3", "archivo": "RLC1.jpg", "pagina": "PasaBanda"},
 ]
 cols = st.columns(3, vertical_alignment= "center")
 
@@ -73,11 +73,16 @@ for idx, (col, opcion) in enumerate(zip(cols, opciones)):
 
 with st.expander("¿Qué hace este Simulador? ❓"):
     st.markdown("""
-    Trabajo realizado por Agustín Lacomi para la asignatura de Físisca 2.
-
     - Podrás simular filtros eléctricos pasivos de primer orden (Pasa-Bajo, Pasa-Alto y Pasa-Banda).
     
     Elegí multiples opciones para ver los comportamientos de los filtros y su respuesta en frecuencia.
+    """)
+
+with st.expander("Créditos"):
+    st.markdown("""
+    - **Autor**: Agustín Lacomi
+    - **Fecha de Entrega**: 29/07/2025
+    - **Materia dictada por**: Pablo König y Juan Carlos Muñoz
     """)
 
 # Redirección fuera del bucle de botones
