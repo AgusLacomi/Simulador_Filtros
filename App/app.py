@@ -56,7 +56,7 @@ for idx, (col, opcion) in enumerate(zip(cols, opciones)):
         
         try:
             # Cargar la imagen
-            image = Image.open(image_paths[image_key])
+            image = Image.open(Path(image_paths[image_key]))
             # Mostrar la imagen
             st.image(image, use_container_width=True)
         except FileNotFoundError:
