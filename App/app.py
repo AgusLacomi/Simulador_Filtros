@@ -13,18 +13,18 @@ if 'button_states' not in st.session_state:
 
 st.title("Selecciona una opción")
 
-# Rutas de las imágenes (ajusta estas rutas según tus archivos)
-image_paths = {
-    'button1_a': 'images/RC1.jpg',
-    'button1_b': 'images/RL1.jpg',
-    'button2_a': 'images/RC2.jpg', 
-    'button2_b': 'images/RL2.jpg',
-    'button3_a': 'images/RLC1.jpg',
-    'button3_b': 'images/RLC2.jpg'
-}
-
-# Ruta base de imágenes
+# Ruta absoluta a la carpeta de imágenes
 img_dir = Path(__file__).parent / "images"
+
+# Rutas absolutas de las imágenes
+image_paths = {
+    'button1_a': img_dir / 'RC1.jpg',
+    'button1_b': img_dir / 'RL1.jpg',
+    'button2_a': img_dir / 'RC2.jpg', 
+    'button2_b': img_dir / 'RL2.jpg',
+    'button3_a': img_dir / 'RLC1.jpg',
+    'button3_b': img_dir / 'RLC2.jpg'
+}
 
 # Configuración de imágenes locales y sus páginas destino
 opciones = [
@@ -56,7 +56,7 @@ for idx, (col, opcion) in enumerate(zip(cols, opciones)):
         
         try:
             # Cargar la imagen
-            image = Image.open(Path(image_paths[image_key]))
+            image = Image.open(image_paths[image_key])
             # Mostrar la imagen
             st.image(image, use_container_width=True)
         except FileNotFoundError:
