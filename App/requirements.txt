@@ -4,5 +4,4 @@ matplotlib
 scipy
 pandas
 pillow
-PIL
 pathlib
